@@ -48,6 +48,7 @@ export default {
         const { data: { token } } = data
         sessionStorage.setItem('token', token)
         this.$message.success(msg)
+        this.$router.push({ name: 'home' })
       } else {
         this.$message.error(msg)
       }
