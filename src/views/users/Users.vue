@@ -63,6 +63,7 @@
           <!-- scope.row 就是当前行绑定的数据对象 -->
           <el-switch
             v-model="scope.row.mg_state"
+            @change="handleSwitchChange(scope.row)"
             active-color="#13ce66"
             inactive-color="#ff4949">
           </el-switch>
@@ -145,6 +146,17 @@ export default {
     },
     handleSearch() {
       this.loadData()
+    },
+    async handleSwitchChange(user) {
+      // console.log(user)
+      const res = await this.$http.put(`users/${user.id}/state/${user.mg_state}`)
+      const data = res.data
+      const { meta: { status, msg } } = data
+      if (status === 200) {
+        this.$message.success(msg)
+      } else {
+        this.$message.error(msg)
+      }
     }
   }
 }
