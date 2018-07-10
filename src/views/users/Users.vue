@@ -10,8 +10,8 @@
     <!-- 搜索区域 -->
     <el-row class="searchArea">
       <el-col :span="24">
-        <el-input class="searchInput" clearable placeholder="请输入内容">
-          <el-button slot="append" icon="el-icon-search"></el-button>
+        <el-input class="searchInput" clearable placeholder="请输入内容" v-model="searchValue">
+          <el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
         </el-input>
         <el-button type="success" plain>添加用户</el-button>
       </el-col>
@@ -99,7 +99,8 @@ export default {
       loading: true,
       pageSize: 2,
       pageNum: 1,
-      total: 0
+      total: 0,
+      searchValue: ''
     }
   },
   created() {
@@ -125,7 +126,7 @@ export default {
       // // 在请求头中设置token
       // this.$http.defaults.headers.common['Authorization'] = token
 
-      const res = await this.$http.get(`users?pagenum=${this.pageNum}&pagesize=${this.pageSize}`)
+      const res = await this.$http.get(`users?pagenum=${this.pageNum}&pagesize=${this.pageSize}&query=${this.searchValue}`)
 
       // 异步请求结束
       this.loading = false
@@ -141,6 +142,9 @@ export default {
       } else {
         this.$message.error(msg)
       }
+    },
+    handleSearch() {
+      this.loadData()
     }
   }
 }
