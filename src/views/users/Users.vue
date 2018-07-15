@@ -13,7 +13,7 @@
         <el-input class="searchInput" clearable placeholder="请输入内容" v-model="searchValue">
           <el-button slot="append" icon="el-icon-search" @click="handleSearch"></el-button>
         </el-input>
-        <el-button type="success" plain>添加用户</el-button>
+        <el-button type="success" plain @click="addUserDialogVisible = true">添加用户</el-button>
       </el-col>
     </el-row>
 
@@ -72,9 +72,9 @@
       <el-table-column
         label="操作">
         <template slot-scope="scope">
-          <el-button plain size="mini" type="primary" icon="el-icon-edit" ></el-button>
+          <el-button plain size="mini" type="primary" icon="el-icon-edit" @click="editBtn(scope.row)"></el-button>
           <el-button plain size="mini" type="danger" @click=handleDelete(scope.row.id) icon="el-icon-delete" ></el-button>
-          <el-button plain size="mini" type="success" icon="el-icon-check" ></el-button>
+          <el-button plain size="mini" type="success" icon="el-icon-check" @click="setRoleBtn(scope.row)"></el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -87,6 +87,68 @@
       layout="total, sizes, prev, pager, next, jumper"
       :total="total">
     </el-pagination>
+    <el-dialog title="添加用户" :visible.sync="addUserDialogVisible" @close="clearDialog">
+      <el-form :model="formData" label-width="100px" :rules="formRules" ref="myForm">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="formData.username" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input type="password" v-model="formData.password" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="formData.email" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="电话">
+          <el-input v-model="formData.mobile" auto-complete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="addUserDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleAdd">确 定</el-button>
+      </div>
+    </el-dialog>
+    <el-dialog title="编辑用户" :visible.sync="editUserDialogVisible" @close="clearDialog">
+      <el-form :model="formData" label-width="100px" :rules="formRules" ref="myForm">
+        <el-form-item label="用户名" prop="username">
+          <el-input disabled v-model="formData.username" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="formData.email" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="电话">
+          <el-input v-model="formData.mobile" auto-complete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="editUserDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleEdit">确 定</el-button>
+      </div>
+    </el-dialog>
+    <el-dialog title="分配角色" :visible.sync="setRoleDialogVisible" @close="clearDialog">
+      <el-form label-width="100px">
+        <el-form-item label="用户名" prop="username">
+            {{ currentUserName }}
+        </el-form-item>
+        <el-form-item label="角色">
+          <template>
+            <el-select v-model="currentRoleId">
+              <el-option disabled label="请选择" :value="currentRoleId">
+              </el-option>
+              <el-option
+                v-for="item in roles"
+                :key="item.id"
+                :label="item.roleName"
+                :value="item.id">
+              </el-option>
+            </el-select>
+          </template>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="setRoleDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="handleSetRole">确 定</el-button>
+      </div>
+    </el-dialog>
   </el-card>
 </template>
 
@@ -101,7 +163,30 @@ export default {
       pageSize: 2,
       pageNum: 1,
       total: 0,
-      searchValue: ''
+      searchValue: '',
+      addUserDialogVisible: false,
+      editUserDialogVisible: false,
+      setRoleDialogVisible: false,
+      formData: {
+        username: '',
+        password: '',
+        email: '',
+        mobile: ''
+      },
+      formRules: {
+        username: [
+          { required: true, message: '请输入用户名', trigger: 'blur' },
+          { min: 3, max: 6, message: '长度在 3 到 6 个字符', trigger: 'blur' }
+        ],
+        password: [
+          { required: true, message: '请输入密码', trigger: 'blur' },
+          { min: 3, max: 6, message: '长度在 3 到 6 个字符', trigger: 'blur' }
+        ]
+      },
+      currentUserName: '',
+      currentRoleId: -1,
+      currentUserId: -1,
+      roles: []
     }
   },
   created() {
@@ -180,6 +265,79 @@ export default {
           message: '已取消删除'
         })
       })
+    },
+    async handleAdd() {
+      this.$refs.myForm.validate(async (valid) => {
+        if (!valid) {
+          return this.$message.error('请输入完整内容')
+        }
+        const res = await this.$http.post('users', this.formData)
+        const data = res.data
+        const { meta: { status, msg } } = data
+        if (status === 201) {
+          this.addUserDialogVisible = false
+          this.$message.success(msg)
+          this.loadData()
+        } else {
+          this.$message.error(msg)
+        }
+      })
+    },
+    clearDialog() {
+      for (let key in this.formData) {
+        this.formData[key] = ''
+      }
+    },
+    editBtn(user) {
+      this.editUserDialogVisible = true
+      this.formData.username = user.username
+      this.formData.mobile = user.mobile
+      this.formData.email = user.email
+    },
+    async handleEdit() {
+      this.$refs.myForm.validate(async (valid) => {
+        if (!valid) {
+          return this.$message.error('请输入完整内容')
+        }
+        const res = await this.$http.put(`users/${this.formData.id}`, {
+          mobile: this.formData.mobile,
+          email: this.formData.email
+        })
+        const data = res.data
+        const { meta: { status, msg } } = data
+        if (status === 200) {
+          this.loadData()
+          this.editUserDialogVisible = false
+          this.$message.success(msg)
+          for (let key in this.formData) {
+            this.formData[key] = ''
+          }
+        } else {
+          this.$message.error(msg)
+        }
+      })
+    },
+    async setRoleBtn(user) {
+      this.setRoleDialogVisible = true
+      const res = await this.$http.get('roles')
+      this.roles = res.data.data
+      this.currentUserName = user.username
+      const res1 = await this.$http.get(`users/${user.id}`)
+      this.currentRoleId = res1.data.data.rid
+      this.currentUserId = user.id
+    },
+    async handleSetRole() {
+      this.setRoleDialogVisible = false
+      const res = await this.$http.put(`users/${this.currentUserId}/role`, {
+        rid: this.currentRoleId
+      })
+      const data = res.data
+      const { meta: { status, msg } } = data
+      if (status === 200) {
+        this.$message.success(msg)
+      } else {
+        this.$message.error(msg)
+      }
     }
   }
 }
