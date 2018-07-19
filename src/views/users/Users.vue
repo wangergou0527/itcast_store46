@@ -344,9 +344,6 @@ export default {
 </script>
 
 <style>
-.box-card {
-  height: 100%;
-}
 .searchArea {
   margin-top: 10px;
   margin-bottom: 10px;

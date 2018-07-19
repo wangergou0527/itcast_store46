@@ -60,7 +60,6 @@ export default {
 
 <style>
 .box-card {
-  height: 100%;
   overflow: auto;
 }
 .tb {
