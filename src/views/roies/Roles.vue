@@ -81,6 +81,7 @@
       :visible.sync="dialogVisible"
       @open="handleOpen">
       <el-tree
+        ref="tree"
         :data="treeData"
         :props="defaultProps"
         show-checkbox
@@ -90,7 +91,7 @@
       </el-tree>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+        <el-button type="primary" @click="handleRoles">确 定</el-button>
       </span>
     </el-dialog>
   </el-card>
@@ -108,7 +109,8 @@ export default {
         children: 'children',
         label: 'authName'
       },
-      checkedList: []
+      checkedList: [],
+      currentRoleId: -1
     }
   },
   created() {
@@ -151,6 +153,7 @@ export default {
       }
     },
     handleChecked(role) {
+      this.currentRoleId = role.id
       this.dialogVisible = true
       const arr = []
       role.children.forEach((item1) => {
@@ -161,6 +164,23 @@ export default {
         })
       })
       this.checkedList = arr
+    },
+    async handleRoles() {
+      const checkedKeys = this.$refs.tree.getCheckedKeys()
+      const halfCheckedKeys = this.$refs.tree.getHalfCheckedKeys()
+      const newArray = [...checkedKeys, ...halfCheckedKeys]
+      const ref = await this.$http.post(`roles/${this.currentRoleId}/rights`, {
+        rids: newArray.join(',')
+      })
+      const refData = ref.data
+      const { meta: { status, msg } } = refData
+      if (status === 200) {
+        this.dialogVisible = false
+        this.$message.success(msg)
+        this.loadData()
+      } else {
+        this.$message.error(msg)
+      }
     }
   }
 }
